@@ -45,8 +45,8 @@ E:\memory\
 ## 安装
 
 ```bash
-git clone <https://github.com/WANGJINSHAN-11/memory-mcp.git>
-cd memory-mcp
+git clone https://github.com/WANGJINSHAN-11/memory_mcp.git
+cd memory_mcp
 
 python -m venv .venv
 # Windows:
