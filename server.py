@@ -16,7 +16,7 @@ import json
 import os
 import shutil
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from mcp.server.mcpserver import MCPServer
@@ -38,8 +38,8 @@ mcp = MCPServer("memory")
 
 
 def _now() -> str:
-    """当前时间（带时区），ISO 格式。"""
-    return datetime.now().astimezone().isoformat(timespec="seconds")
+    """当前时间，UTC ISO 格式（与 JOURNAL 既有的 ts 一致，便于合并排序/去重）。"""
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
 def _backup(path: Path) -> str | None:
