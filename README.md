@@ -123,8 +123,11 @@ memory-mcp/
 ```
 
 会模拟一次完整的 MCP 握手（initialize → tools/list → 逐个调用工具），并打印结果。
-如果嫌麻烦，可以直接交给你的agant
+
 
 ## 许可
 
 MIT
+
+
+如果嫌麻烦，可以直接交给你的agant
