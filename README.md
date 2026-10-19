@@ -39,15 +39,7 @@
 ---
 
 ## 安装
-
-### A. 不克隆，直接跑（推荐）
-
-```bash
-# 有 uv（推荐，无需预装环境）
-uvx plaintext-memory-mcp
-
-
-### B. 克隆源码（想读源码 / 想改代码）
+克隆源码
 
 ```bash
 git clone https://github.com/WANGJINSHAN-11/memory_mcp.git
