@@ -4,7 +4,6 @@
 > Local-first, plain-text long-term memory for any MCP client.
 
 <p>
-  <a href="https://pypi.org/project/plaintext-memory-mcp/"><img alt="PyPI" src="https://img.shields.io/pypi/v/plaintext-memory-mcp"></a>
   <img alt="Python" src="https://img.shields.io/badge/python-%E2%89%A53.10-blue">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
   <img alt="MCP" src="https://img.shields.io/badge/MCP-2.x-purple">
@@ -40,20 +39,7 @@
 
 ## 安装
 
-### A. 不克隆，直接跑（推荐）
-
-```bash
-# 有 uv（推荐，无需预装环境）
-uvx plaintext-memory-mcp
-
-# 或者 pipx（隔离安装，命令会进 PATH）
-pipx install plaintext-memory-mcp
-plaintext-memory-mcp
-```
-
-> ⚠️ PyPI 上的包名是 `plaintext-memory-mcp`——**`memory-mcp` 这个名字已被别的项目占用**，所以换了个名，命令同名。
-
-### B. 克隆源码（想读源码 / 想改代码）
+### 克隆源码
 
 ```bash
 git clone https://github.com/WANGJINSHAN-11/memory_mcp.git
@@ -81,8 +67,8 @@ python -m venv .venv
 
 | 字段 | 值 |
 |---|---|
-| 命令 | `uvx`（或已安装的 `plaintext-memory-mcp`） |
-| 参数 | `plaintext-memory-mcp` |
+| 命令 | 仓库 venv 里的 Python：`<仓库路径>\.venv\Scripts\python.exe`（macOS/Linux 用 `.venv/bin/python`） |
+| 参数 | `<仓库路径>/server.py` 的绝对路径 |
 | 环境变量 | `MEMORY_DIR=<你的记忆目录>`（建议显式填，默认是 `E:\memory`） |
 
 ### Cherry Studio / Claude Desktop / 任何 `mcpServers` 格式的客户端
@@ -91,8 +77,8 @@ python -m venv .venv
 {
   "mcpServers": {
     "memory": {
-      "command": "uvx",
-      "args": ["plaintext-memory-mcp"],
+      "command": "E:\\memory-mcp\\.venv\\Scripts\\python.exe",
+      "args": ["E:\\memory-mcp\\server.py"],
       "env": { "MEMORY_DIR": "E:\\memory" }
     }
   }
@@ -108,16 +94,16 @@ python -m venv .venv
       config:
         transport: stdio
         serverName: memory
-        command: uvx
-        args: ['plaintext-memory-mcp']
+        command: 'E:\memory-mcp\.venv\Scripts\python.exe'
+        args: ['E:\memory-mcp\server.py']
         env:
           MEMORY_DIR: 'E:\memory'
 ```
 
-### 克隆方式（不装包，直接指向源码）
+### macOS / Linux 路径对照
 
-命令填 Python 路径、参数填 `server.py` 的绝对路径、`MEMORY_DIR` 同上。`examples/` 里有三个现成文件：
-`cherry-studio.json`、`claude-desktop.json`、`deepseek-harness.patch.yml`。
+把上面的 Python 换成 `<仓库路径>/.venv/bin/python`、`server.py` 换成 `<仓库路径>/server.py` 即可。
+`examples/` 里有三个现成文件：`cherry-studio.json`、`claude-desktop.json`、`deepseek-harness.patch.yml`。
 
 > ⚠️ **多个客户端同时开着时**：`memory_update` 是整篇覆盖 `FACT.md`，两个客户端同时写会互相覆盖。
 > 约定同一时间只让一个客户端写长期记忆；`memory_append`（追加）可以随便并发。
@@ -186,7 +172,7 @@ memory-mcp/
 │   ├── __main__.py            支持 python -m plaintext_memory_mcp
 │   └── server.py              MCP 服务器主体（127 行，中文注释，可当源码读）
 ├── server.py                  兼容层：老配置里写 server.py 路径照样能跑
-├── pyproject.toml             打包配置（PyPI 包名 plaintext-memory-mcp）
+├── pyproject.toml             打包配置（预留，暂未发布到 PyPI）
 ├── requirements.txt           源码方式的依赖（只有 mcp）
 ├── _test.py                   本地自检：临时目录 + 完整握手 + 四个工具 + 越权断言
 ├── README.md / CHANGELOG.md / LICENSE
