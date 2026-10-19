@@ -46,12 +46,6 @@
 # 有 uv（推荐，无需预装环境）
 uvx plaintext-memory-mcp
 
-# 或者 pipx（隔离安装，命令会进 PATH）
-pipx install plaintext-memory-mcp
-plaintext-memory-mcp
-```
-
-> ⚠️ PyPI 上的包名是 `plaintext-memory-mcp`——**`memory-mcp` 这个名字已被别的项目占用**，所以换了个名，命令同名。
 
 ### B. 克隆源码（想读源码 / 想改代码）
 
