@@ -1,0 +1,13 @@
+# DeepSeek Harness：把这段追加到 profile 的 cordis.patch.yml 顶层数组里
+# 文件位置（desktop profile）：%USERPROFILE%\.dsh\profiles\desktop\cordis.patch.yml
+# 改完要重启 DSH 才生效（profile 在启动时展平）。
+- insert:
+    - id: mcp-memory
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        transport: stdio
+        serverName: memory
+        command: 'E:\memory-mcp\.venv\Scripts\python.exe'
+        args: ['E:\memory-mcp\server.py']
+        env:
+          MEMORY_DIR: 'E:\memory'

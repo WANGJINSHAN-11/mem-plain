@@ -4,10 +4,11 @@
 memory-mcp —— 从零写的一个"长期记忆"MCP 服务器
 
 作用：把一组纯文本记忆文件（FACT / JOURNAL / SOUL / USER）暴露成 MCP 工具，
-      任何支持 MCP 的客户端（Cherry Studio、DeepSeek Harness、Claude 等）接上就能读写。
+      任何支持 MCP 的客户端（Cherry Studio、DeepSeek Harness、Claude Desktop 等）接上就能读写。
 
 记忆位置：默认 E:\\memory，可用环境变量 MEMORY_DIR 覆盖。
 传输方式：stdio（客户端启动本进程，通过标准输入输出收发 JSON-RPC）。
+依赖：mcp >= 2.3.0（用的是 McpServer 新接口，mcp 1.x 的 FastMCP 不兼容）。
 
 ⚠️ 数据永远不离开本机 —— 本文件可以公开，记忆文件绝不上传。
 """
@@ -80,7 +81,7 @@ def memory_update(content: str) -> str:
     if len(content.encode("utf-8")) < MIN_FACT_BYTES and len(old.encode("utf-8")) > MIN_FACT_BYTES * SHRINK_RATIO:
         return (f"拒绝写入：新内容太小（{len(content.encode('utf-8'))} 字节），"
                 f"旧内容有 {len(old.encode('utf-8'))} 字节，疑似写坏/截断。"
-                f"确实要覆盖，请直接编辑文件或用 FORCE。")
+                f"确实要整篇覆盖，请直接编辑文件（写入前记得先备份）。")
     bak = _backup(FACT_FILE)
     FACT_FILE.write_text(content, encoding="utf-8")
     return f"已写入 FACT.md（{len(content.encode('utf-8'))} 字节）" + (f"，备份：{bak}" if bak else "")
@@ -92,7 +93,9 @@ def memory_append(text: str, tags: list[str] | None = None) -> str:
     line = json.dumps(entry, ensure_ascii=False)
     with JOURNAL_FILE.open("a", encoding="utf-8") as f:
         f.write(line + "\n")
-    return f"已追加到 JOURNAL（当前共 {sum(1 for _ in JOURNAL_FILE.open(encoding='utf-8'))} 条）"
+    with JOURNAL_FILE.open(encoding="utf-8", errors="replace") as f:
+        n = sum(1 for _ in f)
+    return f"已追加到 JOURNAL（当前共 {n} 条）"
 
 
 @mcp.tool(description="在 JOURNAL 里搜索关键词（大小写不敏感），返回最近匹配的若干条。")
@@ -119,7 +122,8 @@ def memory_search(query: str, limit: int = 20) -> str:
 
 def main() -> None:
     if not MEMORY_DIR.exists():
-        print(f"警告：记忆目录不存在 {MEMORY_DIR}", file=sys.stderr)
+        print(f"警告：记忆目录不存在 {MEMORY_DIR}，已自动创建（空的记忆）。", file=sys.stderr)
+        MEMORY_DIR.mkdir(parents=True, exist_ok=True)
     mcp.run(transport="stdio")
 
 
