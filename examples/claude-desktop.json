@@ -1,9 +1,11 @@
 {
   "mcpServers": {
     "memory": {
-      "command": "E:\\memory-mcp\\.venv\\Scripts\\python.exe",
-      "args": ["E:\\memory-mcp\\server.py"],
-      "env": { "MEMORY_DIR": "E:\\memory" }
+      "command": "uvx",
+      "args": ["plaintext-memory-mcp"],
+      "env": {
+        "MEMORY_DIR": "E:\\memory"
+      }
     }
   }
 }

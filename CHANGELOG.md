@@ -14,7 +14,14 @@
 - 补齐四个工具的断言 + 越权读取断言（旧版只测了 3 个）
 - 修 Windows 控制台 GBK 编码问题：记忆里有 emoji 时旧版会直接 `UnicodeEncodeError` 崩溃
 
+### 打包与分发
+- 新增 `pyproject.toml`（hatchling）：可发布到 PyPI，包名 **`plaintext-memory-mcp`**（`memory-mcp` 已被别的项目占用，命令同名）
+- 代码移入 `plaintext_memory_mcp/` 包，新增 `python -m plaintext_memory_mcp` 入口与 `plaintext-memory-mcp` 命令
+- 根目录 `server.py` 改为**兼容层**：老配置里 args 指向 `server.py` 的照旧能跑（行为不变，自检已过）
+
 ### 文档
+- README 首屏重构：30 秒看懂 → 三种装法（uvx / pipx / 源码）→ 客户端三要素 → 常见问题
+- 新增 `examples/README.md`（uvx 与源码两种接法的对照）
 - README 重写：记忆文件格式、三个客户端的接入示例、安全设计、设计取舍
 - 新增 `examples/`（Cherry Studio / DeepSeek Harness / Claude Desktop）、`templates/`（FACT 骨架、JOURNAL 示例）
 - 新增 `LICENSE`（MIT）与本文件
