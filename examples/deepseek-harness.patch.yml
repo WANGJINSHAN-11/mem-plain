@@ -1,0 +1,10 @@
+- insert:
+    - id: mcp-memory
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        transport: stdio
+        serverName: memory
+        command: 'E:\memory-mcp\.venv\Scripts\python.exe'
+        args: ['E:\memory-mcp\server.py']
+        env:
+          MEMORY_DIR: 'E:\memory'
