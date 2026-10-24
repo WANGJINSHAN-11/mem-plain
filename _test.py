@@ -111,10 +111,23 @@ try:
     # 10) 越权读取应被拒
     print("memory_read(越权) ->", call(13, "memory_read", {"filename": "../../secret.txt"}))
 
-    # 11) 记忆体检（只读）
-    stats_out = call(14, "memory_stats", {})
+    # 11) 归档文件：可读 + 搜索默认覆盖归档
+    (tmp / "FACT.archive.md").write_text(
+        "# FACT 归档\n\n## 归档 2026-10-24 · 10-13~10-20 流水\n\n- 旧事件：音游 IIDX33 放弃\n",
+        encoding="utf-8",
+    )
+    arch_read = call(14, "memory_read", {"filename": "FACT.archive.md"})
+    print("memory_read(归档) ->", arch_read.strip().splitlines()[-1][:60])
+    assert "IIDX33" in arch_read, arch_read
+    arch_hit = call(15, "memory_search", {"query": "IIDX33"})
+    print("memory_search(归档) ->", arch_hit.strip().splitlines()[-1][:100])
+    assert "归档文件命中" in arch_hit, arch_hit
+
+    # 12) 记忆体检（只读）
+    stats_out = call(16, "memory_stats", {})
     print("memory_stats ->\n" + stats_out)
     assert "FACT.md" in stats_out and "JOURNAL.jsonl" in stats_out, stats_out
+    assert "FACT.archive.md" in stats_out, stats_out
 
     print("\n全部断言通过 ✅")
 finally:

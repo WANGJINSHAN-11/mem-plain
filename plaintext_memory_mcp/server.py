@@ -30,8 +30,8 @@ MEMORY_DIR = Path(os.environ.get("MEMORY_DIR", r"E:\memory"))
 FACT_FILE = MEMORY_DIR / "FACT.md"          # 长期记忆（整篇覆盖）
 JOURNAL_FILE = MEMORY_DIR / "JOURNAL.jsonl"  # 事件日志（逐行追加）
 
-# 允许通过 memory_read 读的文件白名单（防越权读别的文件）
-READABLE = {"FACT.md", "JOURNAL.jsonl", "SOUL.md", "USER.md"}
+# 允许通过 memory_read 读的文件白名单（防越权读别的文件）；归档文件也可读
+READABLE = {"FACT.md", "FACT.archive.md", "JOURNAL.jsonl", "SOUL.md", "USER.md"}
 
 # 缩水闸门：新 FACT 小于 1KB 且旧的大于它 3 倍时，拒绝覆盖（防写坏/截断）
 MIN_FACT_BYTES = 1024
@@ -138,10 +138,20 @@ def _merge_into_today(text: str, tags: list[str]) -> str | None:
     )
 
 
+def _archive_files() -> list[Path]:
+    """记忆目录里的归档文件（`*.archive.md`，按名字排序）。
+
+    归档 = 从 FACT.md 搬出去的旧段落：不进每次会话的固定注入，但仍旧可读、可搜。
+    """
+    if not MEMORY_DIR.exists():
+        return []
+    return sorted(MEMORY_DIR.glob("*.archive.md"))
+
+
 # ─────────────────────────── 工具 ───────────────────────────
 
 @mcp.tool(description=(
-    "读取记忆文件。filename 默认 FACT.md；可传 SOUL.md / USER.md / JOURNAL.jsonl。"
+    "读取记忆文件。filename 默认 FACT.md；可传 SOUL.md / USER.md / JOURNAL.jsonl / FACT.archive.md（归档）。"
     "tail>0 时只返回最后 tail 行（读大文件时用，省 token）。"
 ))
 def memory_read(filename: str = "FACT.md", tail: int = 0) -> str:
@@ -196,39 +206,63 @@ def memory_append(text: str, tags: list[str] | None = None, merge: bool = True) 
 
 
 @mcp.tool(description=(
-    "在 JOURNAL 里检索事件。query 为空时只按 tag / 日期过滤（= 列出某段时间的事）。"
+    "在记忆里检索。默认同时搜 JOURNAL 事件和归档文件（FACT.archive.md）——"
+    "归档是从 FACT 搬走的旧段落，不占固定注入，靠这里找回。"
+    "query 为空时只按 tag / 日期过滤 JOURNAL（= 列出某段时间的事）。"
     "tag 可写多个（逗号分隔），命中任一即可；after / before 用 YYYY-MM-DD（本地日期，含当天）。"
-    "返回最近 limit 条，带时间戳与 tags。大小写不敏感的普通子串匹配，不是语义检索。"
+    "返回最近 limit 条事件（带时间戳与 tags）和命中的归档行。大小写不敏感的普通子串匹配，不是语义检索。"
 ))
-def memory_search(query: str = "", limit: int = 20, tag: str = "", after: str = "", before: str = "") -> str:
-    if not JOURNAL_FILE.exists():
-        return "JOURNAL 文件不存在"
+def memory_search(
+    query: str = "",
+    limit: int = 20,
+    tag: str = "",
+    after: str = "",
+    before: str = "",
+    include_archive: bool = True,
+) -> str:
     q = (query or "").strip().lower()
     want_tags = [t.strip().lower() for t in (tag or "").split(",") if t.strip()]
     d_after, d_before = _parse_day(after), _parse_day(before)
 
     hits: list[tuple[str, str, list[str]]] = []
-    for line in JOURNAL_FILE.read_text(encoding="utf-8", errors="replace").splitlines():
-        try:
-            e = json.loads(line)
-        except json.JSONDecodeError:
-            if q and q in line.lower():
-                hits.append(("", line, []))
-            continue
-        body = str(e.get("text", ""))
-        etags = [str(t) for t in (e.get("tags") or [])]
-        if q and q not in body.lower() and q not in line.lower():
-            continue
-        if want_tags and not any(t in {x.lower() for x in etags} for t in want_tags):
-            continue
-        if d_after or d_before:
-            d = _day_of(e.get("ts", ""))
-            if d is None or (d_after and d < d_after) or (d_before and d > d_before):
+    if JOURNAL_FILE.exists():
+        for line in JOURNAL_FILE.read_text(encoding="utf-8", errors="replace").splitlines():
+            try:
+                e = json.loads(line)
+            except json.JSONDecodeError:
+                if q and q in line.lower():
+                    hits.append(("", line, []))
                 continue
-        hits.append((str(e.get("ts", "")), body, etags))
+            body = str(e.get("text", ""))
+            etags = [str(t) for t in (e.get("tags") or [])]
+            if q and q not in body.lower() and q not in line.lower():
+                continue
+            if want_tags and not any(t in {x.lower() for x in etags} for t in want_tags):
+                continue
+            if d_after or d_before:
+                d = _day_of(e.get("ts", ""))
+                if d is None or (d_after and d < d_after) or (d_before and d > d_before):
+                    continue
+            hits.append((str(e.get("ts", "")), body, etags))
 
     hits = hits[-limit:]  # 取最近的
-    if not hits:
+
+    # 归档文件：按行子串匹配（默认开，避免"图省事只搜 JOURNAL"导致归档变成黑洞）
+    arch_hits: list[tuple[str, int, str]] = []
+    if q and include_archive:
+        for f in _archive_files():
+            try:
+                text = f.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            for i, line in enumerate(text.splitlines(), 1):
+                if q in line.lower():
+                    s = line.strip()
+                    if len(s) > 300:
+                        s = s[:300] + "…"
+                    arch_hits.append((f.name, i, s))
+
+    if not hits and not arch_hits:
         bits = []
         if q:
             bits.append(f"含 {query!r}")
@@ -239,10 +273,19 @@ def memory_search(query: str = "", limit: int = 20, tag: str = "", after: str = 
         if d_before:
             bits.append(f"<={d_before}")
         return "没找到" + ("（" + " ".join(bits) + "）" if bits else "任何记录")
-    out = [f"找到 {len(hits)} 条（显示最近 {len(hits)} 条）："]
-    for ts, body, etags in hits:
-        tail = f"　（tags: {', '.join(etags)}）" if etags else ""
-        out.append(f"[{ts}] {body}{tail}")
+
+    out: list[str] = []
+    if hits:
+        out.append(f"找到 {len(hits)} 条 JOURNAL 事件（最近 {len(hits)} 条）：")
+        for ts, body, etags in hits:
+            tail = f"　（tags: {', '.join(etags)}）" if etags else ""
+            out.append(f"[{ts}] {body}{tail}")
+    else:
+        out.append(f"JOURNAL 里没找到{'含 ' + repr(query) if q else '匹配记录'}（可能只在归档里，见下）")
+    if arch_hits:
+        out.append(f"归档文件命中 {len(arch_hits)} 行（不进每次注入，按需 memory_read 读原文）：")
+        for name, i, s in arch_hits[:limit]:
+            out.append(f"[{name}:{i}] {s}")
     return "\n".join(out)
 
 
@@ -261,7 +304,8 @@ def memory_stats() -> str:
     out = [f"记忆目录：{MEMORY_DIR}"]
     hints: list[str] = []
 
-    for name in ("FACT.md", "USER.md", "SOUL.md", "JOURNAL.jsonl"):
+    names = ["FACT.md", "USER.md", "SOUL.md", "JOURNAL.jsonl"] + [p.name for p in _archive_files()]
+    for name in names:
         path = MEMORY_DIR / name
         if not path.exists():
             out.append(f"{name}：不存在")

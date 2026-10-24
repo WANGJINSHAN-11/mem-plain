@@ -47,7 +47,7 @@ Ready-made configs for Cherry Studio / Claude Desktop / DeepSeek Harness are in 
 
 ## 30 秒看懂
 
-- **记忆 = 4 个纯文本文件**：`FACT.md`（长期事实）、`JOURNAL.jsonl`（事件流水）、`SOUL.md`（人格）、`USER.md`（用户档案）
+- **记忆 = 4 个纯文本文件**（+ 可选的 `FACT.archive.md` 归档）：`FACT.md`（长期事实）、`JOURNAL.jsonl`（事件流水）、`SOUL.md`（人格）、`USER.md`（用户档案）
 - **工具 = 一个 MCP 服务器**：只负责读写上面这几个文件，不联网、不建库、不上云
 - **结果**：Cherry Studio、Claude Desktop、DeepSeek Harness……接上**同一个目录**，就共享同一份记忆
 
@@ -151,7 +151,7 @@ python -m venv .venv
 | `memory_read(filename="FACT.md", tail=0)` | 读记忆文件；`tail=N` 只读末尾 N 行，省 token |
 | `memory_update(content)` | 整篇覆盖 `FACT.md`；**写入前自动备份** + **缩水保护** |
 | `memory_append(text, tags=[], merge=True)` | 往 `JOURNAL.jsonl` 追加一条事件；**默认「巩固」**：与今天某条相似度 ≥90% 就并进那条，不新增 |
-| `memory_search(query="", limit=20, tag="", after="", before="")` | 在 JOURNAL 里检索：关键词子串 + 按 tag 过滤 + 按日期范围过滤（`YYYY-MM-DD`，本地日期） |
+| `memory_search(query="", limit=20, tag="", after="", before="", include_archive=True)` | 检索：JOURNAL 关键词 + tag/日期过滤（`YYYY-MM-DD`，本地日期）；**默认连归档文件一起搜**（`include_archive=False` 关掉） |
 | `memory_stats()` | **记忆体检（只读）**：各文件体积/行数/条数、最后修改时间与距今天数、JOURNAL 首末时间与今日新增、备份占用；超阈值给整理提示 |
 
 给模型用的习惯：
@@ -162,7 +162,8 @@ python -m venv .venv
 | 只读 FACT 末尾几节（省 token） | `memory_read(tail=50)` |
 | 记一条事件（只写结论，不抄原文） | `memory_append(text="...", tags=["项目"])` |
 | 手动补一条重复内容（不想合并） | `memory_append(text="...", merge=False)` |
-| 找以前记过的事 | `memory_search(query="关键词")` |
+| 找以前记过的事 | `memory_search(query="关键词")`（默认连归档一起搜） |
+| 找已经搬进归档的旧事 | 同上，不用额外参数；需要看原文就 `memory_read(filename="FACT.archive.md")` |
 | 看某个方向最近都发生了什么 | `memory_search(tag="项目")` 或 `memory_search(after="2026-10-01", before="2026-10-31")` |
 | 先看记忆整体状态、该不该整理 | `memory_stats()` |
 | 重写整篇 FACT（谨慎） | `memory_update(content="...")` |
@@ -175,10 +176,11 @@ python -m venv .venv
 
 ```
 <MEMORY_DIR>\
-├── FACT.md        长期记忆：身份、项目、环境、约定……（整篇覆盖）
-├── JOURNAL.jsonl  事件日志：每行一条 JSON（只追加）
-├── SOUL.md        人格定义（只读）
-└── USER.md        用户档案（只读）
+├── FACT.md           长期记忆：身份、项目、环境、约定……（整篇覆盖）
+├── FACT.archive.md   归档（可选）：从 FACT 搬出的旧段落，不进固定注入，靠 memory_search 找回
+├── JOURNAL.jsonl     事件日志：每行一条 JSON（只追加）
+├── SOUL.md           人格定义（只读）
+└── USER.md           用户档案（只读）
 ```
 
 `JOURNAL.jsonl` 每行格式（时间戳统一 **UTC、`Z` 结尾、毫秒**，方便跨机器合并排序）：
@@ -189,13 +191,15 @@ python -m venv .venv
 
 `templates/` 里有一份空的 FACT 骨架和 JOURNAL 示例，可以先照着抄。
 
+**FACT 太大怎么办（归档）**：新会话往往得把 `FACT.md` 整篇读进来，所以它越短越好。用 `memory_stats()` 看体积，超过约 60 KB 就把「日期流水」这类旧段落**整节**剪到 `FACT.archive.md`（原文不动，FACT 原位留一行指针），并且**先备份**。归档文件不参与固定注入，但 `memory_read` 能读、`memory_search` 默认会搜——**归档 = 搬家，不是丢弃**。
+
 ---
 
 ## 安全设计
 
 1. 🔒 **缩水保护**：`memory_update` 若发现新内容不足 1KB、且旧内容是它的 **3 倍以上**，直接拒绝——防一次误写/截断毁掉全部记忆。真要整篇覆盖，请直接编辑文件（记得先备份）。
 2. 💾 **自动备份**：每次覆盖写入前，旧文件先备份成 `FACT.md.bak-<时间戳>`。
-3. 📖 **读取白名单**：`memory_read` 只能读 FACT / JOURNAL / SOUL / USER 四个文件，`../../secret.txt` 这类越权路径会被拒。
+3. 📖 **读取白名单**：`memory_read` 只能读 FACT / FACT.archive / JOURNAL / SOUL / USER，`../../secret.txt` 这类越权路径会被拒。
 4. 🏠 **数据不出本机**：服务器只读写本地文件，没有任何网络请求。
 5. 🔧 **路径不写死**：`MEMORY_DIR` 环境变量，换机器只改一处。
 
@@ -245,7 +249,7 @@ memory-mcp/
 
 ## 版本
 
-见 [CHANGELOG.md](CHANGELOG.md)。当前 **v0.2.0**（2026-10-19）。
+见 [CHANGELOG.md](CHANGELOG.md)。当前 **v0.5.0**（2026-10-24）。
 
 ## 许可
 

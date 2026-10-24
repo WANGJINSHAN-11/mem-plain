@@ -1,5 +1,20 @@
 # 更新日志
 
+## v0.5.0 — 2026-10-24
+
+### server.py
+- **归档文件支持**：`memory_read` 白名单新增 `FACT.archive.md`。归档 = 从 `FACT.md` 整节搬出去的旧段落（如日期流水），**不进每次会话的固定注入**，但仍旧可读。
+- **`memory_search` 默认搜归档**：新增 `include_archive=True`。结果分两段——JOURNAL 事件（带时间戳 / tags）与归档命中（带 `文件名:行号`）。默认开启，避免"图省事只搜 JOURNAL"把归档变成只进不出的黑洞。
+- 新增内部函数 `_archive_files()`：记忆目录下所有 `*.archive.md` 都可搜，支持多个归档文件。
+- `memory_stats()` 也报告归档文件的体积 / 行数 / 修改时间。
+
+### _test.py
+- 新增断言：归档文件可读、`memory_search` 默认能搜到归档内容、`memory_stats` 输出里含 `FACT.archive.md`
+
+### 文档
+- README：目录结构、读取白名单、工具表、习惯表补上归档说明；新增「FACT 太大怎么办（归档）」一节
+- 版本号 0.4.0 → 0.5.0
+
 ## v0.4.0 — 2026-10-24
 
 ### server.py
