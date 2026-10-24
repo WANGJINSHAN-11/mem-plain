@@ -213,7 +213,7 @@ memory-mcp/
 ├── plaintext_memory_mcp/
 │   ├── __init__.py            包入口（导出 main、__version__）
 │   ├── __main__.py            支持 python -m plaintext_memory_mcp
-│   └── server.py              MCP 服务器主体（127 行，中文注释，可当源码读）
+│   └── server.py              MCP 服务器主体（约 370 行，中文注释，可当源码读）
 ├── server.py                  兼容层：老配置里写 server.py 路径照样能跑
 ├── pyproject.toml             打包配置（预留，暂未发布到 PyPI）
 ├── requirements.txt           源码方式的依赖（只有 mcp）
