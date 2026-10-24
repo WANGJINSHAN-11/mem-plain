@@ -123,6 +123,15 @@ try:
     print("memory_search(归档) ->", arch_hit.strip().splitlines()[-1][:100])
     assert "归档文件命中" in arch_hit, arch_hit
 
+    # 11b) 按行号读一段（v0.6.0）：只读第 4 行起的 2 行，应命中 IIDX33 且带行号头
+    seg = call(19, "memory_read", {"filename": "FACT.archive.md", "offset": 4, "limit": 2})
+    print("memory_read(行段) ->", seg.strip().splitlines()[:2])
+    assert "第 4–5 行" in seg, seg
+    assert "IIDX33" in seg, seg
+    over = call(20, "memory_read", {"filename": "FACT.archive.md", "offset": 999})
+    print("memory_read(越界) ->", over)
+    assert "超出范围" in over, over
+
     # 12) 记忆体检（只读）
     stats_out = call(16, "memory_stats", {})
     print("memory_stats ->\n" + stats_out)

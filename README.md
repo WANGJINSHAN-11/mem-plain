@@ -148,7 +148,7 @@ python -m venv .venv
 
 | 工具 | 作用 |
 |---|---|
-| `memory_read(filename="FACT.md", tail=0)` | 读记忆文件；`tail=N` 只读末尾 N 行，省 token |
+| `memory_read(filename="FACT.md", tail=0, offset=0, limit=0)` | 读记忆文件；`tail=N` 读末尾 N 行；`offset`/`limit` 按行号读一段（读归档时最省 token） |
 | `memory_update(content)` | 整篇覆盖 `FACT.md`；**写入前自动备份** + **缩水保护** |
 | `memory_append(text, tags=[], merge=True)` | 往 `JOURNAL.jsonl` 追加一条事件；**默认「巩固」**：与今天某条相似度 ≥90% 就并进那条，不新增 |
 | `memory_search(query="", limit=20, tag="", after="", before="", include_archive=True)` | 检索：JOURNAL 关键词 + tag/日期过滤（`YYYY-MM-DD`，本地日期）；**默认连归档文件一起搜**（`include_archive=False` 关掉） |
@@ -160,6 +160,7 @@ python -m venv .venv
 |---|---|
 | 读长期记忆 | `memory_read()` |
 | 只读 FACT 末尾几节（省 token） | `memory_read(tail=50)` |
+| 按行号读归档的一段（配合 search 给的行号） | `memory_read(filename="FACT.archive.md", offset=88, limit=12)` |
 | 记一条事件（只写结论，不抄原文） | `memory_append(text="...", tags=["项目"])` |
 | 手动补一条重复内容（不想合并） | `memory_append(text="...", merge=False)` |
 | 找以前记过的事 | `memory_search(query="关键词")`（默认连归档一起搜） |
@@ -249,7 +250,7 @@ memory-mcp/
 
 ## 版本
 
-见 [CHANGELOG.md](CHANGELOG.md)。当前 **v0.5.0**（2026-10-24）。
+见 [CHANGELOG.md](CHANGELOG.md)。当前 **v0.6.0**（2026-10-24）。
 
 ## 许可
 

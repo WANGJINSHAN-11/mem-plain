@@ -152,9 +152,11 @@ def _archive_files() -> list[Path]:
 
 @mcp.tool(description=(
     "读取记忆文件。filename 默认 FACT.md；可传 SOUL.md / USER.md / JOURNAL.jsonl / FACT.archive.md（归档）。"
-    "tail>0 时只返回最后 tail 行（读大文件时用，省 token）。"
+    "三种取法（按优先级）：tail>0 只返回最后 tail 行；offset>0 或 limit>0 按行号读一段"
+    "（offset 从 1 起，limit 最多几行；配合 memory_search 给的行号读归档最省 token）；"
+    "都不给就整份返回。"
 ))
-def memory_read(filename: str = "FACT.md", tail: int = 0) -> str:
+def memory_read(filename: str = "FACT.md", tail: int = 0, offset: int = 0, limit: int = 0) -> str:
     name = Path(filename).name
     if name not in READABLE:
         return f"拒绝：只能读 {sorted(READABLE)}，收到的是 {filename!r}"
@@ -162,9 +164,17 @@ def memory_read(filename: str = "FACT.md", tail: int = 0) -> str:
     if not path.exists():
         return f"文件不存在：{path}"
     text = path.read_text(encoding="utf-8", errors="replace")
+    lines = text.splitlines()
+    total = len(lines)
     if tail > 0:
-        lines = text.splitlines()
-        text = "\n".join(lines[-tail:])
+        start = max(1, total - tail + 1)
+        return f"[{name} 第 {start}–{total} 行 / 共 {total} 行]\n" + "\n".join(lines[-tail:])
+    if offset > 0 or limit > 0:
+        start = max(1, offset or 1)
+        if start > total:
+            return f"{name} 只有 {total} 行，offset={start} 超出范围"
+        end = total if limit <= 0 else min(total, start + limit - 1)
+        return f"[{name} 第 {start}–{end} 行 / 共 {total} 行]\n" + "\n".join(lines[start - 1:end])
     return text
 
 
