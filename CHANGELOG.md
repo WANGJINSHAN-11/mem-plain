@@ -1,5 +1,33 @@
 # 更新日志
 
+## v0.4.0 — 2026-10-24
+
+### server.py
+- **`memory_search` 支持情境线索召回**：新增 `tag`（多个用逗号分隔，任一命中）、`after` / `before`（`YYYY-MM-DD`，本地日期，含当天）三个参数；`query` 改为可选，留空即"只按 tag/日期列出事件"。返回结果带上该条的 tags。
+- **`memory_append` 支持「巩固」**：新增 `merge=True` 参数。写入前回看最近 500 行、只看今天，用 `difflib` 比对归一化文本；相似度 ≥90%（或新内容被旧条目包含）时不新增条目，而是把新信息用「；」并进那条、tags 取并集，并原子重写 JOURNAL（先自动备份）。`merge=False` 可强制新增。
+- 新增内部工具：`_norm()`（归一化比对）、`_day_of()`（UTC 时间戳→本地日期）、`_parse_day()`、`_merge_into_today()`；常量 `MERGE_SIMILARITY = 0.90`。
+- 原有四个工具的参数保持向后兼容（`memory_search` 的 `query` 仍是第一个参数）。
+
+### _test.py
+- 新增断言：重复追加必须走合并而非新增、tag 过滤、日期过滤（今天查得到/明天起查不到）
+
+### 文档
+- README：工具表与用法示例补上 `tag` / `after` / `before` / `merge`
+- 版本号 0.3.0 → 0.4.0
+
+## v0.3.0 — 2026-10-24
+
+### server.py
+- 新增第五个工具 **`memory_stats()`（只读"记忆体检"）**：返回 FACT / USER / SOUL / JOURNAL 的体积、行数/条数、最后修改时间与距今天数；JOURNAL 的首末时间与今日新增条数；备份文件个数与总占用；超阈值（FACT > 60 KB、JOURNAL > 400 KB）给整理提示。
+- 设计取舍：**不做**搜索命中记账、**不做**自动归档。命中数据反映的是"谁搜过什么"，不等于记忆价值，且会多一个含 query 原文的敏感日志文件；归档是破坏性操作，留给人工判断。
+
+### _test.py
+- 工具清单断言改为五个，新增 `memory_stats` 断言（输出里必须含 `FACT.md` 与 `JOURNAL.jsonl`）
+
+### 文档
+- README：工具表与"给模型用的习惯"补上 `memory_stats`；自检说明改五个工具；"缺点"一节指向 `memory_stats`
+- 版本号 0.2.0 → 0.3.0
+
 ## v0.2.0 — 2026-10-19
 
 ### server.py

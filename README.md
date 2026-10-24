@@ -11,6 +11,40 @@
 
 ---
 
+## English quick start
+
+A **local-first, plain-text long-term memory server** for any MCP client (Cherry Studio, Claude Desktop, DeepSeek Harness, …). Memory lives in four human-readable files under `MEMORY_DIR` — `FACT.md`, `JOURNAL.jsonl`, `SOUL.md`, `USER.md` — so you can open, edit, back up and `git diff` it.
+
+- No database, no vector store, no network calls.
+- Five tools: `memory_read`, `memory_update`, `memory_append`, `memory_search`, `memory_stats`.
+- Safety: shrink protection on `FACT.md` (refuses writes that shrink it below 1 KB or to less than 1/3 of its size), automatic `*.bak-<timestamp>` backup before every overwrite, read whitelist.
+- Requires Python ≥ 3.10 and `mcp >= 2.3.0`.
+
+```bash
+git clone https://github.com/WANGJINSHAN-11/memory_mcp.git
+cd memory_mcp
+python -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt   # macOS/Linux: .venv/bin/python
+```
+
+Client config for any MCP client — command = venv python, args = [`server.py`], env = `MEMORY_DIR`:
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "C:\\path\\to\\memory_mcp\\.venv\\Scripts\\python.exe",
+      "args": ["C:\\path\\to\\memory_mcp\\server.py"],
+      "env": { "MEMORY_DIR": "E:\\memory" }
+    }
+  }
+}
+```
+
+Ready-made configs for Cherry Studio / Claude Desktop / DeepSeek Harness are in [`examples/`](examples/).
+
+---
+
 ## 30 秒看懂
 
 - **记忆 = 4 个纯文本文件**：`FACT.md`（长期事实）、`JOURNAL.jsonl`（事件流水）、`SOUL.md`（人格）、`USER.md`（用户档案）
@@ -110,14 +144,15 @@ python -m venv .venv
 
 ---
 
-## 四个工具
+## 五个工具
 
 | 工具 | 作用 |
 |---|---|
 | `memory_read(filename="FACT.md", tail=0)` | 读记忆文件；`tail=N` 只读末尾 N 行，省 token |
 | `memory_update(content)` | 整篇覆盖 `FACT.md`；**写入前自动备份** + **缩水保护** |
-| `memory_append(text, tags=[])` | 往 `JOURNAL.jsonl` 追加一条事件（自动带时间戳） |
-| `memory_search(query, limit=20)` | 在 JOURNAL 里搜关键词（大小写不敏感），返回最近 N 条 |
+| `memory_append(text, tags=[], merge=True)` | 往 `JOURNAL.jsonl` 追加一条事件；**默认「巩固」**：与今天某条相似度 ≥90% 就并进那条，不新增 |
+| `memory_search(query="", limit=20, tag="", after="", before="")` | 在 JOURNAL 里检索：关键词子串 + 按 tag 过滤 + 按日期范围过滤（`YYYY-MM-DD`，本地日期） |
+| `memory_stats()` | **记忆体检（只读）**：各文件体积/行数/条数、最后修改时间与距今天数、JOURNAL 首末时间与今日新增、备份占用；超阈值给整理提示 |
 
 给模型用的习惯：
 
@@ -126,7 +161,10 @@ python -m venv .venv
 | 读长期记忆 | `memory_read()` |
 | 只读 FACT 末尾几节（省 token） | `memory_read(tail=50)` |
 | 记一条事件（只写结论，不抄原文） | `memory_append(text="...", tags=["项目"])` |
+| 手动补一条重复内容（不想合并） | `memory_append(text="...", merge=False)` |
 | 找以前记过的事 | `memory_search(query="关键词")` |
+| 看某个方向最近都发生了什么 | `memory_search(tag="项目")` 或 `memory_search(after="2026-10-01", before="2026-10-31")` |
+| 先看记忆整体状态、该不该整理 | `memory_stats()` |
 | 重写整篇 FACT（谨慎） | `memory_update(content="...")` |
 
 ---
@@ -174,7 +212,7 @@ memory-mcp/
 ├── server.py                  兼容层：老配置里写 server.py 路径照样能跑
 ├── pyproject.toml             打包配置（预留，暂未发布到 PyPI）
 ├── requirements.txt           源码方式的依赖（只有 mcp）
-├── _test.py                   本地自检：临时目录 + 完整握手 + 四个工具 + 越权断言
+├── _test.py                   本地自检：临时目录 + 完整握手 + 五个工具 + 越权断言
 ├── README.md / CHANGELOG.md / LICENSE
 ├── examples/                  三个客户端的接入配置示例
 └── templates/                 记忆文件骨架
@@ -188,7 +226,7 @@ memory-mcp/
 - **可迁移**：换机器拷一个目录就完事，没有导出/导入格式
 - **可版本化**：`git diff` 能看见记忆是怎么长出来的
 - **便宜**：一个进程、零 embedding、零索引，不额外烧 token
-- **缺点**：`memory_search` 只是关键词子串匹配，没有语义检索；`FACT.md` 变大后要配合 `tail` 分页读
+- **缺点**：`memory_search` 只是关键词子串匹配，没有语义检索；`FACT.md` 变大后要配合 `tail` 分页读，或先用 `memory_stats()` 看体积再决定是否整理
 
 这些缺点是有意接受的——记忆量在"几千条事件、几十 KB 正文"这个量级时，纯文本完全够用，
 而可读、可改、可迁移的价值远大于语义检索。
@@ -216,4 +254,4 @@ MIT，见 [LICENSE](LICENSE)。
 ## 致谢
 
 基于 MCP 官方 Python SDK（[modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk)）实现；
-接口设计参考了社区里常见的 `memory_read / memory_update / memory_append / memory_search` 四工具约定。
+接口设计参考了社区里常见的 `memory_read / memory_update / memory_append / memory_search` 四工具约定；`memory_stats` 是本项目额外加的只读"体检"口，不参与读写。
