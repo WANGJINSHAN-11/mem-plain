@@ -1,4 +1,4 @@
-# plaintext-memory-mcp
+# memplain
 
 > 让 AI 记住你，但记忆存在**你自己磁盘上的文本文件**里。
 > Local-first, plain-text long-term memory for any MCP client.
@@ -11,6 +11,27 @@
 
 ---
 
+## 安装
+
+```bash
+pip install memplain
+```
+
+或者从源码装（开发用）：
+
+```bash
+git clone https://github.com/WANGJINSHAN-11/mem-plain.git
+cd mem-plain
+pip install -e .
+```
+
+装完有两个入口，效果一样：
+
+```bash
+memplain                              # 命令行脚本
+python -m memplain                    # 模块方式
+```
+
 ## English quick start
 
 A **local-first, plain-text long-term memory server** for any MCP client (Cherry Studio, Claude Desktop, DeepSeek Harness, …). Memory lives in four human-readable files under `MEMORY_DIR` — `FACT.md`, `JOURNAL.jsonl`, `SOUL.md`, `USER.md` — so you can open, edit, back up and `git diff` it.
@@ -21,8 +42,8 @@ A **local-first, plain-text long-term memory server** for any MCP client (Cherry
 - Requires Python ≥ 3.10 and `mcp >= 2.3.0`.
 
 ```bash
-git clone https://github.com/WANGJINSHAN-11/memory_mcp.git
-cd memory_mcp
+git clone https://github.com/WANGJINSHAN-11/mem-plain.git
+cd mem-plain
 python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt   # macOS/Linux: .venv/bin/python
 ```
@@ -33,8 +54,8 @@ Client config for any MCP client — command = venv python, args = [`server.py`]
 {
   "mcpServers": {
     "memory": {
-      "command": "C:\\path\\to\\memory_mcp\\.venv\\Scripts\\python.exe",
-      "args": ["C:\\path\\to\\memory_mcp\\server.py"],
+      "command": "C:\\path\\to\\mem-plain\\.venv\\Scripts\\python.exe",
+      "args": ["C:\\path\\to\\mem-plain\\server.py"],
       "env": { "MEMORY_DIR": "E:\\memory" }
     }
   }
@@ -76,8 +97,8 @@ Ready-made configs for Cherry Studio / Claude Desktop / DeepSeek Harness are in 
 ### 克隆源码
 
 ```bash
-git clone https://github.com/WANGJINSHAN-11/memory_mcp.git
-cd memory_mcp
+git clone https://github.com/WANGJINSHAN-11/mem-plain.git
+cd mem-plain
 
 python -m venv .venv
 
@@ -210,9 +231,9 @@ python -m venv .venv
 
 ```
 memory-mcp/
-├── plaintext_memory_mcp/
+├── memplain/
 │   ├── __init__.py            包入口（导出 main、__version__）
-│   ├── __main__.py            支持 python -m plaintext_memory_mcp
+│   ├── __main__.py            支持 python -m memplain
 │   └── server.py              MCP 服务器主体（约 370 行，中文注释，可当源码读）
 ├── server.py                  兼容层：老配置里写 server.py 路径照样能跑
 ├── pyproject.toml             打包配置（预留，暂未发布到 PyPI）

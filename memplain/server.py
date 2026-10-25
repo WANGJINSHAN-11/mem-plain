@@ -44,8 +44,15 @@ mcp = MCPServer("memory")
 
 
 def _now() -> str:
-    """当前时间，UTC ISO 格式（与 JOURNAL 既有的 ts 一致，便于合并排序/去重）。"""
-    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    """当前时间，本地时区 ISO 格式（带 +08:00 偏移，例如 2026-10-25T00:39:01.601+08:00）。
+
+    为什么不再写 UTC 的 "Z"：外部消费方（Cherry 侧界面、别的 agent）常直接取 ts 的前 10 个
+    字符当日期显示。凌晨 0–8 点写出的条目，UTC 日期会落到前一天（本地 2026-10-25 00:39
+    → "2026-10-24T16:39Z"），于是被误读成"昨天说的"。带偏移写出来仍是合法 ISO 8601，
+    绝对时间完全不变（本文件 _day_of() 会 astimezone 再取本地日期，结果一致），
+    但"截前 10 字符"的消费方也能拿到正确的本地日期。
+    """
+    return datetime.now().astimezone().isoformat(timespec="milliseconds")
 
 
 def _backup(path: Path) -> str | None:

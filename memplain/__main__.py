@@ -1,4 +1,4 @@
-"""`python -m plaintext_memory_mcp` 入口。"""
+"""`python -m memplain` 入口。"""
 
 from .server import main
 

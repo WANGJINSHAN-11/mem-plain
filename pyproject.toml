@@ -3,8 +3,8 @@ requires = ["hatchling>=1.21"]
 build-backend = "hatchling.build"
 
 [project]
-name = "plaintext-memory-mcp"
-version = "0.6.0"
+name = "memplain"
+version = "0.6.1"
 description = "本地纯文本长期记忆 MCP 服务器：一份记忆目录，多个 AI 客户端共用（Cherry Studio / Claude Desktop / DeepSeek Harness）"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -28,20 +28,20 @@ classifiers = [
 dependencies = ["mcp>=2.3.0"]
 
 [project.urls]
-Homepage = "https://github.com/WANGJINSHAN-11/memory_mcp"
-Repository = "https://github.com/WANGJINSHAN-11/memory_mcp"
-Issues = "https://github.com/WANGJINSHAN-11/memory_mcp/issues"
-Changelog = "https://github.com/WANGJINSHAN-11/memory_mcp/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/WANGJINSHAN-11/mem-plain"
+Repository = "https://github.com/WANGJINSHAN-11/mem-plain"
+Issues = "https://github.com/WANGJINSHAN-11/mem-plain/issues"
+Changelog = "https://github.com/WANGJINSHAN-11/mem-plain/blob/main/CHANGELOG.md"
 
 [project.scripts]
-plaintext-memory-mcp = "plaintext_memory_mcp.server:main"
+memplain = "memplain.server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["plaintext_memory_mcp"]
+packages = ["memplain"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "plaintext_memory_mcp/",
+  "memplain/",
   "server.py",
   "README.md",
   "CHANGELOG.md",
