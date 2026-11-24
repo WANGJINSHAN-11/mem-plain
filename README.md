@@ -277,6 +277,8 @@ memory-mcp/
 
 MIT，见 [LICENSE](LICENSE)。
 
+[![Glama score](https://glama.ai/mcp/servers/WANGJINSHAN-11/mem-plain/badges/score.svg)](https://glama.ai/mcp/servers/WANGJINSHAN-11/mem-plain)
+
 ## 致谢
 
 基于 MCP 官方 Python SDK（[modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk)）实现；
